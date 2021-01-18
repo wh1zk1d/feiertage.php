@@ -23,6 +23,42 @@
   $arr = get_object_vars($obj);
   $titles = array_keys($arr);
 
+  // Checken ob der Feiertag ein Werktag ist
+  function checkWorkingDay($date) {
+    // In Unix Timestamp umwandeln
+    $unix_timestamp = strtotime($date);
+
+    // Wochentag ziehen
+    $dayOfWeek = date("l", $unix_timestamp);
+
+    // Checken ob Werktag oder nicht
+    $isWorkingDay = false;
+
+    if ($dayOfWeek != 'Sunday' && $dayOfWeek != 'Saturday') {
+      $isWorkingDay = true;
+    }
+
+    // Ergebnis zurückgeben
+    return $isWorkingDay;
+  }
+
+  // Feiertage für Monat
+  /*
+    $month: Number, 1-12
+  */
+  function getHolidaysForMonth ($month, $holidays) {
+    $holidays_in_month = array_filter($holidays, function($holiday) use ($month) {
+      $unix_timestamp = strtotime($holiday->date);
+      $holiday_month = date("m", $unix_timestamp);
+
+      $trimmed_month = ltrim($holiday_month, '0');
+      
+      return $trimmed_month == $month ? true : false;
+    });
+
+    return $holidays_in_month;
+  }
+
   // Neues, leeres Array generieren
   $holidays = array();
 
@@ -32,8 +68,15 @@
     $holiday->name = $title;
     $holiday->date = $arr[$title]->datum;
 
-    $holidays[] = $holiday;
+    $isWorkingDay = checkWorkingDay($holiday->date);
+
+    if ($isWorkingDay) {
+      $holidays[] = $holiday;
+    }
   }
+
+  $holidays_in_month = getHolidaysForMonth(4, $holidays);
+  $num_of_holidays_in_month = count($holidays_in_month);
 ?>
 
 <!DOCTYPE html>
@@ -47,11 +90,11 @@
 </head>
 <body>
   <div class="container">
-    <h1>🗓 Feiertage <?php echo $year; ?> (<?php echo $state; ?>)</h1>
+    <h1>🗓 Feiertage (<?php echo $num_of_holidays_in_month; ?>)</h1>
 
   <ul>
     <?php
-      foreach ($holidays as $holiday) {
+      foreach ($holidays_in_month as $holiday) {
         echo '<li>' . $holiday->name . ' (' . $holiday->date . ')' . '</li>';
       }
     ?>
